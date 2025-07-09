@@ -1,0 +1,30 @@
+model:
+  in_dim: 1461078
+  out_dim: 1
+  hidden_sizes:
+  - 128
+  - 64
+  activation: leaky_relu
+  dropout: 0.0
+trainer:
+  batch_size: 32
+  patience: 0
+  min_epochs: 10
+  max_epochs: 10
+  lr_rate: 0.001
+  optimizer: adam
+  optimizer_params:
+    weight_decay: 0.0
+  loss: bce
+  loss_params:
+    pos_weight: 9.0
+adversarial_trainer:
+  perturbation_scheme: accumulate
+  m: ???
+  classes_to_perturb:
+  - 1
+  delta_bound: ???
+  delta_type: discrete
+  feat_selection: ???
+distillation:
+  distillation: ???

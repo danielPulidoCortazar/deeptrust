@@ -1,0 +1,14 @@
+multi_step:
+  multi_step: true
+  t1: 0.75
+  t2: 0.5
+  t3: 0.15
+  t4: 0.5
+trust_net:
+  cfg_path: experiments/out/tab-adv-train-m_2_delta_bound_100_feat_selection_topk/config.yaml
+  classifier_path: experiments/out/tab-adv-train-m_2_delta_bound_100_feat_selection_topk/classifier.ckpt
+  vectorizer_path: experiments/out/tab-adv-train-m_2_delta_bound_100_feat_selection_topk/vectorizer.pkl
+guard_net:
+  cfg_path: experiments/out/tab-adv-train-m_2_delta_bound_75_feat_selection_topk/config.yaml
+  classifier_path: experiments/out/tab-adv-train-m_2_delta_bound_75_feat_selection_topk/classifier.ckpt
+  vectorizer_path: experiments/out/tab-adv-train-m_2_delta_bound_75_feat_selection_topk/vectorizer.pkl

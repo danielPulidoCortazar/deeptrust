@@ -1,0 +1,19 @@
+# @package _global_
+
+multi_step:
+  multi_step: true
+  t1: 0.75
+  t2: 0.5
+  t3: ???
+  t4: 0.5
+
+trust_net:
+  cfg_path: ???
+  classifier_path: ???
+  vectorizer_path: ???
+
+guard_net:
+  cfg_path: ???
+  classifier_path: ???
+  vectorizer_path: ???
+

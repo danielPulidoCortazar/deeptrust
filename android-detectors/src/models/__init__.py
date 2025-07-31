@@ -7,3 +7,4 @@ from .robust_mlp.robust_mlp import RobustMLP
 from .natural_mlp.natural_mlp import NaturalMLP
 from .multi_step.multi_step import MultiStep
 from .iiia_rf.rf import RF
+from .iiia_xgboost.xgboost import XGBoost

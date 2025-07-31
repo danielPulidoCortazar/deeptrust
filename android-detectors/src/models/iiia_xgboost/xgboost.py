@@ -6,26 +6,50 @@ import torch
 from sklearn.model_selection import train_test_split
 from sklearn.utils._array_api import get_namespace
 from models.base import BaseDREBIN
-from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
 
-from omegaconf import DictConfig
 from sklearn.metrics import confusion_matrix as BinaryConfusionMatrix
 
 
 log = logging.getLogger(__name__)
 
-class RF(BaseDREBIN, RandomForestClassifier):
+class XGBoost(BaseDREBIN, XGBClassifier):
     """
-    Implements the RandomForest classifier.
+    Implements the XGBoost classifier using xgboost library.
+    Documentation for pararemeters: https://xgboost.readthedocs.io/en/stable/parameter.html.
     """
 
     def __init__(self,
-                 n_estimators=95, criterion='entropy', max_depth=None,
-                 min_samples_split=2, min_samples_leaf=1, min_weight_fraction_leaf=0.0,
-                 max_features='sqrt', max_leaf_nodes=None, min_impurity_decrease=0.0,
-                 bootstrap=False, oob_score=False, n_jobs=None, random_state=0,
-                 verbose=0, warm_start=False, class_weight=None, ccp_alpha=0.0,
-                 max_samples=None, monotonic_cst=None):
+                 n_estimators=100, max_depth=8, max_leaves=None,
+                 learning_rate=0.2, gamma=0.25, subsample=1.0, colsample_bytree=1.0,
+                 colsample_bylevel=1.0):
+        """
+        Default hyparameters are the optimal ones found with TPE hyperparameter optimization.
+
+        Parameters
+        ----------
+        n_estimators : int, optional
+            Number of trees in the ensemble. Default is 100.
+        max_depth : int, optional
+            Maximum depth of a tree. Default is 8. Increasing this value will make the
+            model more complex and more likely to overfit.
+        max_leaves : int, optional
+            Maximum number of leaves in a tree. Default is None.
+        learning_rate : float, optional
+            Learning rate shrinks the contribution of each tree. Default is 0.2.
+        gamma : float, optional
+            Minimum loss reduction required to make a further partition on a leaf node. Default is 0.
+            The larger the value, the more conservative the algorithm will be.
+        subsample : float, optional
+            Subsample ratio of the training instances. Setting it to 0.5 means that XGBoost would
+            randomly sample half of the training data prior to growing trees. and this will
+            prevent overfitting. Subsampling will occur once in every boosting iteration. range: (0,1]
+            Default is 1.0.
+        colsample_bytree : float, optional
+            Subsample ratio of columns when constructing each tree. Default is 1.0.
+        colsample_bylevel : float, optional
+            Subsample ratio of columns for each level of the tree. Default is 1.0.
+        """
 
 
         # Set seeds
@@ -34,15 +58,11 @@ class RF(BaseDREBIN, RandomForestClassifier):
         torch.manual_seed(0)
 
         BaseDREBIN.__init__(self)
-        RandomForestClassifier.__init__(self, n_estimators=n_estimators, criterion=criterion,
-                                        max_depth=max_depth, min_samples_split=min_samples_split,
-                                        min_samples_leaf=min_samples_leaf, min_weight_fraction_leaf=min_weight_fraction_leaf,
-                                        max_features=max_features, max_leaf_nodes=max_leaf_nodes,
-                                        min_impurity_decrease=min_impurity_decrease, bootstrap=bootstrap,
-                                        oob_score=oob_score, n_jobs=n_jobs, random_state=random_state,
-                                        verbose=verbose, warm_start=warm_start, class_weight=class_weight,
-                                        ccp_alpha=ccp_alpha, max_samples=max_samples, monotonic_cst=monotonic_cst
-        )
+        XGBClassifier.__init__(self, n_estimators=n_estimators, max_depth=max_depth, max_leaves=max_leaves,
+                      grow_policy='lossguide', learning_rate=learning_rate, verbosity=2,
+                      objective='binary:logistic', booster='gbtree', tree_method="exact", gamma=gamma,
+                      subsample=subsample, colsample_bytree=colsample_bytree, colsample_bylevel=colsample_bylevel,
+                      random_state=0)
 
     def _compute_metrics(self, tp, fp, tn, fn):
         """
@@ -88,7 +108,7 @@ class RF(BaseDREBIN, RandomForestClassifier):
         log.info(f"Reproducibility check: First 10 train split idx -  {train_idx[:10]}")
         log.info(f"Reproducibility check: First 10 val split idx - {val_idx[:10]}")
 
-        RandomForestClassifier.fit(self, X[train_idx], y[train_idx])
+        XGBClassifier.fit(self, X[train_idx], y[train_idx])
         # Train metrics
         y_train = y[train_idx]
         X_train = X[train_idx]

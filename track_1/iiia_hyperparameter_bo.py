@@ -2,6 +2,8 @@
 Bayesian optimization for hyperparameter tuning of the models. The strategy is to train each trial
 for a few epochs and retrieve the score, which is the maximum F1 score obtained in validation during training.
 """
+import sys
+sys.path.append("../android-detectors/src")
 
 import logging
 import math
@@ -11,7 +13,7 @@ import hydra
 import numpy as np
 import plotly
 import torch
-from models import NaturalMLP, RobustMLP, MultiStep, RF
+from models import NaturalMLP, RobustMLP, MultiStep, RF, XGBoost
 import optuna
 from models.utils import *
 import os
@@ -192,6 +194,33 @@ def objective_rf(trial):
 
     return score
 
+def objective_xgboost(trial):
+
+    # Set seeds
+    random.seed(0)
+    np.random.seed(0)
+    torch.manual_seed(0)
+
+    logging.info(f"Trial number: {trial.number}")
+
+    # Define the model
+    classifier = define_trial_xgboost(trial)
+
+    base_path = os.path.join(os.path.dirname(__file__))
+
+    features_tr = load_features(
+        os.path.join(base_path, "../data/training_set_features.zip"))
+    y_tr = load_labels(
+        os.path.join(base_path, "../data/training_set_features.zip"),
+        os.path.join(base_path, "../data/training_set.zip"))
+
+    train_metrics = classifier.fit(features_tr, y_tr)
+    logging.info(f"Metrics: {train_metrics}")
+    f1 = np.nanmax(train_metrics["val_f1"])
+    score = f1 if not math.isnan(f1) else 0.0
+
+    return score
+
 def define_trial_mlp(trial):
 
     # Define the hyperparameters to optimize
@@ -352,6 +381,32 @@ def define_trial_rf(trial):
 
     return model
 
+def define_trial_xgboost(trial):
+
+    hyperparameters = {
+        "n_estimators": trial.suggest_int("n_estimators", 25, 100, step=5),
+        "max_depth": trial.suggest_int("max_depth", 3, 10, step=1),
+        "max_leaves": None,
+        "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3, step=0.01),
+        "gamma": trial.suggest_float("gamma", 0.0, 1.0, step=0.01),
+        "subsample": 1,
+        "colsample_bytree": trial.suggest_float("colsample_bytree", 0.1, 1.0, step=0.05),
+        "colsample_bylevel": 1,
+    }
+
+    # Define the model
+    cfg = {"hyperparameters": hyperparameters}
+    cfg = OmegaConf.create(cfg)
+
+    n_estimators = cfg.hyperparameters.n_estimators
+    # Pop hyperparameters from cfg
+    hyper = dict(cfg.hyperparameters)
+    hyper.pop("n_estimators")
+    logging.info(f"Trial configuration:\n{OmegaConf.to_yaml(cfg)}")
+    model = XGBoost(n_estimators=n_estimators, **hyper)
+
+    return model
+
 
 @hydra.main(version_base="1.3.2", config_path="iiia_config", config_name="bo_config")
 def main(cfg):
@@ -371,6 +426,8 @@ def main(cfg):
         study.optimize(robust_objective_multistep, n_trials=10, n_jobs=1)
     elif cfg.model == "rf":
         study.optimize(objective_rf, n_trials=20, n_jobs=1)
+    elif cfg.model == "xgboost":
+        study.optimize(objective_xgboost, n_trials=20, n_jobs=1)
 
     logging.info("Finished search.")
 

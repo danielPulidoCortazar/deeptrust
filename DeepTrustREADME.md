@@ -58,7 +58,8 @@ pip install -r track_2/problem_space_attack/manipulation/Obfuscapk/src/requireme
 
 # Set PATH variables
 export PYTHONPATH="${PYTHONPATH}:android-detectors/src"
-export PATH=$PATH:~/android-sdk/build-tools/34.0.0 # For Track 2
+## For Track 2
+export PATH=$PATH:~/android-sdk/build-tools/34.0.0
 
 # Run the main script to train the classifiers from scratch and produce the submission files
 python main.py --clf_loader_path android-detectors/src/loaders/trust_mlp_loader.py --track 1 --method_name trust_mlp
@@ -74,38 +75,46 @@ files from the `pretrained` directory as their weights are already saved in the 
 **On Track 2 Submission**
 
 The Track 2 submission is a bit different, as it requires the use of Obfuscapk to obfuscate the APKs.
-We recomment to follow the instructions in the [Obfuscapk repository](track_2/problem_space_attack/manipulation/Obfuscapk/README.md) to install it. 
+We recommend to follow the instructions in the [Obfuscapk repository](track_2/problem_space_attack/manipulation/Obfuscapk/README.md) to install it. 
 
 In this case, this repository already have
-Obfuscapk from source, so you would only need to have a recent version of
+Obfuscapk from source (if not, download it and place it in `track_2/problem_space_attack/manipulation/Obfuscapk`), 
+so you would only need to have a recent version of
 [`apktool`](https://ibotpeaches.github.io/Apktool/),
 [`apksigner`](https://developer.android.com/studio/command-line/apksigner)
 and [`zipalign`](https://developer.android.com/studio/command-line/zipalign) installed
 and available from the command line, as indicated in the instructions of the [Obfuscapk repository](track_2/problem_space_attack/manipulation/Obfuscapk/README.md).
 
-It is enough to install the command line tools of the Android SDK, which can be downloaded from the 
-[Android developer website](https://developer.android.com/studio#command-line-tools-only). And then install the build tools version 34.0.0, 
-which is the one used in this repository.
+For that:
+
+1. Install the command line tools of the Android SDK, which can be downloaded from the 
+[Android developer website](https://developer.android.com/studio#command-line-tools-only). 
+2. Install the build tools version 34.0.0, 
+which is the one used in this repository. 
+3. Place it in the `~/android-sdk/build-tools/34.0.0` directory, 
+or change the path in the `export PATH` command below.
 
 Furthermore, you will need to provide an Api key into the `config.py` so the APKs can be downloaded from the AndroZoo repository.
 
 Once everything is set up, you can run the following command to produce the submission files for Track 2. In order to reproduce the submission
 all the APKs will be downloaded, which is a long process. Also the evasion attack in this track is quite slow and does not work on MacOS, 
-so it is recommended to run it on a Linux machine.
+so it is recommended to run it on Linux platform.
 ```bash
 export PYTHONPATH="${PYTHONPATH}:android-detectors/src"
-export PATH=$PATH:~/android-sdk/build-tools/34.0.0 # Add the path for access to the Android SDK build tools
+# Change by the path where you have installed the Android SDK build tools
+export PATH=$PATH:~/android-sdk/build-tools/34.0.0
 python main.py --clf_loader_path android-detectors/src/loaders/deeptrust_loader.py --track 2 --method_name deeptrust
 ```
 
 ## Reproduce Research Paper Experiments
-The experiments conducted in section 4.2 of the research paper are implemented in the `experiments` directory.
+The experiments conducted in Evaluation section of the research paper are implemented in the `experiments` directory.
 1. Training:
    - In the `experiments/training.py` file, you can find the code. There, there are blocks of code to train
    each of the _experiment groups_. If you want to run a specific experiment, you can comment out the others.
    and then run the script
     ```bash
-    python experiments/training.py
+   export PYTHONPATH="${PYTHONPATH}:android-detectors/src"
+   python experiments/training.py
     ```
    - The trained models will be saved in different directories within the `experiments/out`. In each directory you will
    find four files: 
@@ -117,6 +126,7 @@ The experiments conducted in section 4.2 of the research paper are implemented i
     - In the `experiments/evaluation.py` file, you can find the code to evaluate the models trained in the previous step.
     - You can run the script with the following command:
    ```bash
+    export PYTHONPATH="${PYTHONPATH}:android-detectors/src"
     python experiments/evaluation.py --models_dir experiments/out
     ```
     - If the `--models_dir` argument points to a single model directory (containing `config.yaml`, `vectorizer.pkl`, and `classifier.ckpt`), the script will evaluate that specific model.

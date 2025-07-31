@@ -164,8 +164,14 @@ cython_debug/
 *.zip
 *.apk
 *.pth
+*.ckpt
 
 # MacOS generated files
 .DS_Store
 
-# Project directory structure
+# PDF docs (paper figures)
+*.pdf
+
+# Hydra outputs directory
+/outputs
+/track_1/outputs

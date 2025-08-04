@@ -1,8 +1,8 @@
 # @package _global_
 
 multi_step:
-  multi_step: true
-  t1: 0.75
+  multi_step: true # Set to true for multistep, false for ensemble
+  t1: 0.75 # if multi_step is false, t1 becomes the decision threshold for the combined output, the rest are ignored
   t2: 0.5
   t3: ???
   t4: 0.5

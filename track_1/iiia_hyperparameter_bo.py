@@ -1,6 +1,5 @@
 """
-Bayesian optimization for hyperparameter tuning of the models. The strategy is to train each trial
-for a few epochs and retrieve the score, which is the maximum F1 score obtained in validation during training.
+Bayesian optimization for hyperparameter tuning of the models.
 """
 import sys
 sys.path.append("../android-detectors/src")

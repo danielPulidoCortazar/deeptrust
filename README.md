@@ -65,8 +65,6 @@ Follow the instructions to produce the submission files for the competition.
    
    # Set PATH variables
     export PYTHONPATH="${PYTHONPATH}:android-detectors/src"
-   ## Only for Track 2
-    export PATH=$PATH:~/android-sdk/build-tools/34.0.0
     ```
 
 DeepTrust is a multi-step system that is compound of three learners, two MLPs and an Isolation Forest placed in the second activation condition: SAdvNet (_GuardNet_), wAdvNet (_TrustNet_), Isolation Forest (_InspectRF_).
@@ -164,6 +162,7 @@ takes up considerable disk space. The attack of Track 2 does not work on _MacOS_
 ```bash
 export PYTHONPATH="${PYTHONPATH}:android-detectors/src"
 # Change by the path where you have installed the Android SDK build tools
+## Only for Track 2
 export PATH=$PATH:~/android-sdk/build-tools/34.0.0
 python main.py --clf_loader_path android-detectors/src/loaders/deeptrust_loader.py --track 2 --method_name deeptrust
 ```

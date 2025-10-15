@@ -9,7 +9,20 @@ carried out in the research paper. Read the inherited [elsa-cyber_README](elsa-c
 for more information on the benchmark.
 
 ### Research
-Xxx
+If you use this code, please cite:
+
+[DeepTrust: Multi-Step Classification through Dissimilar Adversarial Representations for Robust Android Malware Detection](https://arxiv.org/abs/2510.12310)
+```bibtex
+@misc{pulidocortázar2025deeptrustmultistepclassificationdissimilar,
+      title={DeepTrust: Multi-Step Classification through Dissimilar Adversarial Representations for Robust Android Malware Detection}, 
+      author={Daniel Pulido-Cortázar and Daniel Gibert and Felip Manyà},
+      year={2025},
+      eprint={2510.12310},
+      archivePrefix={arXiv},
+      primaryClass={cs.CR},
+      url={https://arxiv.org/abs/2510.12310}, 
+}
+```
 
 ### Folder Structure
     deetrust

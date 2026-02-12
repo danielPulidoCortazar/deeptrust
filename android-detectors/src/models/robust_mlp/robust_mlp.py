@@ -64,13 +64,15 @@ class RobustMLP(BaseMLP, BaseDREBIN):
 
         # Get distillation params
         assert cfg.get("distillation", None) is not None or "Distillation configs not declared."
-        self.distillation = cfg["distillation"].get('distillation', 0.0)
-        if type(self.distillation) != float:
-            self.distillation = 0.0
+        self.distillation = 0.0
+        if cfg.get("distillation", None) is not None:
+            self.distillation = cfg["distillation"].get('distillation', 0.0)
 
         # Get smoothing params
-        assert cfg.get("distillation", None) is not None or "Distillation configs not declared."
-        self.smoothing = cfg["smoothing"].get('smoothing', 0.0)
+        assert cfg.get("smoothing", None) is not None or "Smoothing configs not declared."
+        self.smoothing = 0.0
+        if cfg.get("smoothing", None) is not None:
+            self.smoothing = cfg["smoothing"].get('smoothing', 0.0)
 
 
     def _fit(self, X, y):

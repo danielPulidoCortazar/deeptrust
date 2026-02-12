@@ -152,7 +152,7 @@ class BaseMLP(nn.Module, BaseDREBIN):
         return (x, embedding) if return_embedding else x
 
 
-    def _load_pt_dataset(self, X: csr_matrix, y = None, distillation=0.0):
+    def _load_pt_dataset(self, X: csr_matrix, y = None, distillation=0.0, smoothing=0.0):
         """
         Loads the dataset into a PyTorch dataset.
 
@@ -174,7 +174,7 @@ class BaseMLP(nn.Module, BaseDREBIN):
         """
 
         # Create the PyTorch dataset
-        self.set = PtDrebinDataset(X, y, distillation)
+        self.set = PtDrebinDataset(X, y, distillation=distillation, smoothing=smoothing)
 
         # If the labels are provided, split the dataset for training
         if self.set.y is not None:

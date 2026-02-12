@@ -68,6 +68,10 @@ class RobustMLP(BaseMLP, BaseDREBIN):
         if type(self.distillation) != float:
             self.distillation = 0.0
 
+        # Get smoothing params
+        assert cfg.get("distillation", None) is not None or "Distillation configs not declared."
+        self.smoothing = cfg["smoothing"].get('smoothing', 0.0)
+
 
     def _fit(self, X, y):
         """
@@ -88,7 +92,7 @@ class RobustMLP(BaseMLP, BaseDREBIN):
         """
 
         # Load the PyTorch dataset
-        self._load_pt_dataset(X, y, self.distillation)
+        self._load_pt_dataset(X, y, distillation=self.distillation, smoothing=self.smoothing)
 
         # Show num of params
         print(f"Number of trainable parameters: "

@@ -28,3 +28,6 @@ adversarial_trainer:
 
 distillation:
   distillation: ???
+
+smoothing:
+  smoothing: ???

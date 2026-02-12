@@ -27,14 +27,18 @@ class PtDrebinDataset(Dataset):
         The ground truth labels.
     """
 
-    def __init__(self, X:scipy.sparse.csc, y:np.array = None, distillation: float = None):
+    def __init__(self, X:scipy.sparse.csc, y:np.array = None, smoothing: float = 0.0, distillation: float = 0.0):
         self.X = X
         self.y = y
         self.hard_labels = y
 
+        if smoothing > 0.0 and distillation > 0.0:
+            raise ValueError("Both smoothing and distillation cannot be activated at the same time. "
+                             "Please choose one of them.")
+
         if distillation > 0.0:
 
-            print("Distillation mode activated. Fitting the RF model to smooth the labels.")
+            print(f"Distillation mode activated (lambda = {distillation}. Fitting the RF model to smooth the labels.")
 
             hyperparameters = {
                 'n_estimators': 95, 'criterion': 'entropy', 'max_depth': None, 'min_samples_split': 2,
@@ -52,6 +56,13 @@ class PtDrebinDataset(Dataset):
             y = rf.predict_proba(X)[:,1]
             # Set the new labels as a soft version of the hard labels
             self.y = distillation * y + (1 - distillation) * self.hard_labels
+
+        elif smoothing > 0.0:
+
+            print(f"Standard label smoothing activated with alpha={smoothing}")
+
+            # Set the new labels as a soft version of the hard labels
+            self.y = self.hard_labels * (1 - smoothing) + (1 - self.hard_labels) * smoothing
 
 
     def __len__(self):

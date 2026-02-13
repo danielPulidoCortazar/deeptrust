@@ -242,7 +242,7 @@ class RobustMLP(BaseMLP, BaseDREBIN):
                         # Optimize
                         self.optimizer.step()
 
-                        if self.distillation > 0.0:
+                        if self.distillation > 0.0 or self.smoothing > 0.0:
                             # Compute cm and metrics
                             cm.update(input=sigmoid(outputs).squeeze(),
                                       target=hard_labels.squeeze().to(torch.int64)

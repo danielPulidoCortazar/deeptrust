@@ -397,82 +397,145 @@ if __name__ == "__main__":
     # =================================================================================
     # =================================================================================
 
-    # ensemble-natural-smoothed02
+    # # ensemble-natural-smoothed02
+    #
+    # print("========================================")
+    # print("Starting experimentation...")
+    # print("========================================")
+    # print("Experimental setup:")
+    # print("Predefined model and trainer parameters")
+    # print("========================================")
+    #
+    # # Load the configuration file
+    # config_path = "experiments/out/ensemble-natural-smoothed02/config.yaml"
+    # config = OmegaConf.load(config_path)
+    #
+    # run_experiment(
+    #     config,
+    #     f"ensemble-natural-smoothed02",
+    #     model="multistep"
+    # )
+    #
+    # print(f"Training completed for experiment")
+    # print("=========================================")
+    # print()
+
+    # =================================================================================
+    # =================================================================================
+
+    # # ensemble-natural-smoothed04
+    #
+    # print("========================================")
+    # print("Starting training experimentation...")
+    # print("========================================")
+    # print("Experimental setup:")
+    # print("Predefined model and trainer parameters")
+    # print("========================================")
+    #
+    # # Load the configuration file
+    # config_path = "experiments/out/ensemble-natural-smoothed04/config.yaml"
+    # config = OmegaConf.load(config_path)
+    #
+    # run_experiment(
+    #     config,
+    #     f"ensemble-natural-smoothed04",
+    #     model="multistep"
+    # )
+    #
+    # print(f"Training completed for experiment")
+    # print("=========================================")
+    # print()
+
+    # =================================================================================
+    # =================================================================================
+
+    # # ensemble-natural-adversarial100
+    #
+    # print("========================================")
+    # print("Starting training experimentation...")
+    # print("========================================")
+    # print("Experimental setup:")
+    # print("Predefined model and trainer parameters")
+    # print("========================================")
+    #
+    # # Load the configuration file
+    # config_path = "experiments/out/ensemble-natural-adversarial100/config.yaml"
+    # config = OmegaConf.load(config_path)
+    #
+    # run_experiment(
+    #     config,
+    #     f"ensemble-natural-adversarial100",
+    #     model="multistep"
+    # )
+    #
+    # print(f"Training completed for experiment")
+    # print("=========================================")
+    # print()
+
+    # =================================================================================
+    # =================================================================================
+
+    # # multistep-natural-adversarial100-2steps
+    #
+    # print("========================================")
+    # print("Starting experimentation...")
+    # print("========================================")
+    # print("Experimental setup:")
+    # print("Predefined model and trainer parameters")
+    # print("========================================")
+    #
+    # # Load the configuration file
+    # config_path = "experiments/out/multistep-natural-adversarial100-2steps/config.yaml"
+    # config = OmegaConf.load(config_path)
+    #
+    # run_experiment(
+    #     config,
+    #     f"multistep-natural-adversarial100-2steps",
+    #     model="multistep"
+    # )
+    #
+    # print(f"Training completed for experiment")
+    # print("=========================================")
+    # print()
+
+    # =================================================================================
+    # =================================================================================
+
+    # STANDARD LABEL SMOOTHING EXPERIMENTATION
+
+    # Configurations for standard smoothing configurations
+    smoothing = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
     print("========================================")
-    print("Starting experimentation...")
+    print("Starting standard smoothing experimentation...")
     print("========================================")
     print("Experimental setup:")
     print("Predefined model and trainer parameters")
+    print(f"Standard smoothing experimentation with:")
+    print(f"- smoothing: {smoothing}")
     print("========================================")
+    for s in smoothing:
+        # Print the current configuration
+        print(f"Training with smoothing={s}")
 
-    # Load the configuration file
-    config_path = "experiments/out/ensemble-natural-smoothed02/config.yaml"
-    config = OmegaConf.load(config_path)
+        # Load the configuration file
+        config_path = "experiments/configs/mlp_training.yaml"
+        config = OmegaConf.load(config_path)
+        config.adversarial_trainer.m = 1
+        config.adversarial_trainer.delta_bound = 0
+        config.adversarial_trainer.feat_selection = "topk"
+        config.distillation.distillation = 0
+        config.smoothing.smoothing = s
 
-    run_experiment(
-        config,
-        f"ensemble-natural-smoothed02",
-        model="multistep"
-    )
+        run_experiment(
+            config,
+            f"standard-smoothing-train-smoothing_{s}",
+            model="robust"
+        )
 
-    print(f"Training completed for experiment")
-    print("=========================================")
-    print()
+        print(f"Training completed for experiment: standard-smoothing-train with smoothing={s}")
+        print("=========================================")
+        print()
 
-    # =================================================================================
-    # =================================================================================
-
-    # ensemble-natural-smoothed04
-
-    print("========================================")
-    print("Starting training experimentation...")
-    print("========================================")
-    print("Experimental setup:")
-    print("Predefined model and trainer parameters")
-    print("========================================")
-
-    # Load the configuration file
-    config_path = "experiments/out/ensemble-natural-smoothed04/config.yaml"
-    config = OmegaConf.load(config_path)
-
-    run_experiment(
-        config,
-        f"ensemble-natural-smoothed04",
-        model="multistep"
-    )
-
-    print(f"Training completed for experiment")
-    print("=========================================")
-    print()
-
-    # =================================================================================
-    # =================================================================================
-
-    # ensemble-natural-adversarial100
-
-    print("========================================")
-    print("Starting training experimentation...")
-    print("========================================")
-    print("Experimental setup:")
-    print("Predefined model and trainer parameters")
-    print("========================================")
-
-    # Load the configuration file
-    config_path = "experiments/out/ensemble-natural-adversarial100/config.yaml"
-    config = OmegaConf.load(config_path)
-
-    run_experiment(
-        config,
-        f"ensemble-natural-adversarial100",
-        model="multistep"
-    )
-
-    print(f"Training completed for experiment")
-    print("=========================================")
-    print()
-
-    # =================================================================================
-    # =================================================================================
 
 print("All experiments completed.")

@@ -156,7 +156,7 @@ class RobustMLP(BaseMLP, BaseDREBIN):
                         outputs = self.forward(perturbed_features)
 
                         # If distillation is enabled, set new loss_fn to use hard labels to set the weights
-                        if self.distillation > 0.0:
+                        if self.distillation > 0.0 or self.smoothing > 0.0:
                             self.loss_fn = nn.BCEWithLogitsLoss(
                                 reduction="sum",
                                 weight=hard_labels.to(self.device) *
@@ -187,7 +187,7 @@ class RobustMLP(BaseMLP, BaseDREBIN):
                             # Forward pass with perturbed samples
                             outputs = self.forward(perturbed_features)
 
-                            if self.distillation > 0.0:
+                            if self.distillation > 0.0 or self.smoothing > 0.0:
                                 # Create weighted binary cross entropy loss based on the hard labels
                                 self.loss_fn = nn.BCEWithLogitsLoss(
                                     reduction="sum",
@@ -289,7 +289,7 @@ class RobustMLP(BaseMLP, BaseDREBIN):
                         # Forward pass
                         outputs = self.forward(features)
 
-                        if self.distillation > 0.0:
+                        if self.distillation > 0.0 or self.smoothing > 0.0:
                             # Create weighted binary cross entropy loss based on the hard labels
                             self.loss_fn = nn.BCEWithLogitsLoss(
                                 reduction="sum",
@@ -300,7 +300,7 @@ class RobustMLP(BaseMLP, BaseDREBIN):
                         loss = self.loss_fn(outputs, labels)
                         val_loss += loss
 
-                    if self.distillation > 0.0:
+                    if self.distillation > 0.0 or self.smoothing > 0.0:
                         # Compute cm and metrics
                         cm.update(input=sigmoid(outputs).squeeze(),
                                   target=hard_labels.squeeze().to(torch.int64)
@@ -332,7 +332,7 @@ class RobustMLP(BaseMLP, BaseDREBIN):
             cm.reset()
 
         # To avoid conflicts when loading the model
-        if self.distillation > 0.0:
+        if self.distillation > 0.0 or self.smoothing > 0.0:
             # If not converted to dict, it throws error
             dict_loss_params = dict(self.loss_params)
             dict_loss_params['pos_weight'] = torch.tensor(dict_loss_params['pos_weight'])

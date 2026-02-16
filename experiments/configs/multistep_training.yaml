@@ -2,6 +2,7 @@
 
 multi_step:
   multi_step: true # Set to true for multistep, false for ensemble
+  n_steps: ??? # If multi_step is false, this parameter is ignored. If set to two, t3 and t4 are ignored
   t1: 0.75 # if multi_step is false, t1 becomes the decision threshold for the combined output, the rest are ignored
   t2: 0.5
   t3: ???

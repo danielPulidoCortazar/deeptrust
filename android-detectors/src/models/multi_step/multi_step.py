@@ -91,16 +91,19 @@ class MultiStep(nn.Module, BaseDREBIN):
                                        self.guard_net_vectorizer_path,
                                        self.guard_net_classifier_path)
 
+        # Set metaheuristic scheme (Multi-step or ensemble)
+        self.multi_step = cfg["multi_step"].get("multi_step", False)
+        self.n_steps = None
+        if self.multi_step:
+            self.n_steps = cfg["multi_step"].get("n_steps", None)
+
         # Load the inspectRF
-        if self.t3 != 0.0 and self.t3 is not None and self.t3 != "???":
+        self.inspectRF = None
+        if (self.n_steps and self.n_steps == 3 and
+                self.t3 is not None and self.t3 != 0.0 and self.t3 != "???"):
             self.inspectRF = IsolationForest(
                 n_estimators=100, max_samples=1.0,
                 random_state=0, contamination=self.t3)
-        else:
-            self.inspectRF = None
-
-        # Set metaheuristic scheme (Multi-step or ensemble)
-        self.multi_step = cfg["multi_step"].get("multi_step", False)
 
 
     def _fit(self, X, y):
@@ -119,7 +122,6 @@ class MultiStep(nn.Module, BaseDREBIN):
         dict
             The training metrics.
         """
-
         if self.inspectRF is not None:
             self.trustNet._load_pt_dataset(X, y, self.trustNet.distillation)
 
@@ -233,6 +235,13 @@ class MultiStep(nn.Module, BaseDREBIN):
                             indices[i] = 1
                             scores[i] = base_prob
 
+                        # In case the number of steps is 2,
+                        # we stop here and classify as goodware if the base prob is less than t2
+                        elif self.n_steps == 2:
+                            #print("Guard barrier crossed! → BaseNet flags it as goodware.")
+                            indices[i] = 0
+                            scores[i] = base_prob
+
                         # Step 3: InspectorRF
                         elif self.inspectRF is not None:
     #                         print("Base prob is less than t2")
@@ -264,7 +273,7 @@ class MultiStep(nn.Module, BaseDREBIN):
                                 scores[i] = guard_prob
                             else:
                                 indices[i] = 0
-                                scores[i] = base_prob
+                                scores[i] = guard_prob
 
 
         return indices, scores

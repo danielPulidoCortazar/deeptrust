@@ -59,7 +59,7 @@ class PtDrebinDataset(Dataset):
 
         elif smoothing > 0.0:
 
-            print(f"Standard label smoothing activated with alpha={smoothing}")
+            print(f"Standard label smoothing activated with lambda = {smoothing}")
 
             # Set the new labels as a soft version of the hard labels
             self.y = self.hard_labels * (1 - smoothing) + (1 - self.hard_labels) * smoothing

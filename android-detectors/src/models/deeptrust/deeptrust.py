@@ -82,6 +82,9 @@ class DeepTrust(nn.Module, BaseDREBIN):
             print("Loading guardNet")
             self.guardNet = GuardMLP.load(self.guardnet_vectorizer_path, self.guardnet_classifier_path)
 
+        # True for multistep, False for averaging the probs. of the two networks
+        self.multistep = True
+
         # Load the inspectRF
         self.inspectRF = IsolationForest(
             n_estimators=100, max_samples=1.0,
@@ -104,39 +107,41 @@ class DeepTrust(nn.Module, BaseDREBIN):
         dict
             The training metrics.
         """
+        if self.inspectRF is not None:
+            self.trustNet.load_pt_dataset(X, y, self.trustNet.distillation)
 
-        self.trustNet.load_pt_dataset(X, y, self.trustNet.distillation)
+            # Load the PyTorch dataset
+            trainloader = self.trustNet.trainloader
 
-        # Load the PyTorch dataset
-        trainloader = self.trustNet.trainloader
+            embeddings = []
 
-        embeddings = []
+            self.trustNet.eval()
+            with torch.no_grad():
+                for i, (features, labels, hard_labels) in enumerate(tqdm(
+                        trainloader, desc="Extracting goodware embeddings from baseNet")):
 
-        self.trustNet.eval()
-        with torch.no_grad():
-            for i, (features, labels, hard_labels) in enumerate(tqdm(
-                    trainloader, desc="Extracting goodware embeddings from baseNet")):
+                    # Get the features and labels
+                    features = features.to(self.device)
+                    hard_labels = hard_labels.to(self.device).squeeze()
 
-                # Get the features and labels
-                features = features.to(self.device)
-                hard_labels = hard_labels.to(self.device).squeeze()
+                    # Get only goodware samples
+                    features = features[hard_labels == 0,:]
 
-                # Get only goodware samples
-                features = features[hard_labels == 0,:]
+                    features = features.to(self.trustNet.device)
+                    outputs, batch_embeddings = self.trustNet.forward(
+                        features, return_embedding=True)
 
-                features = features.to(self.trustNet.device)
-                outputs, batch_embeddings = self.trustNet.forward(
-                    features, return_embedding=True)
+                    # Append to list
+                    embeddings.append(batch_embeddings.cpu())
 
-                # Append to list
-                embeddings.append(batch_embeddings.cpu())
+            # Convert list of tensors to a single tensor
+            embeddings = torch.cat(embeddings, dim=0).numpy()
 
-        # Convert list of tensors to a single tensor
-        embeddings = torch.cat(embeddings, dim=0).numpy()
-
-        # Fit the outlier detector inspectRF
-        print("Fitting the inspectRF with goodware embeddings.")
-        self.inspectRF.fit(embeddings)
+            # Fit the outlier detector inspectRF
+            print("Fitting the inspectRF with goodware embeddings.")
+            self.inspectRF.fit(embeddings)
+        else:
+            print("No inspectRF provided, skipping the fitting of the outlier detector.")
 
 
     def predict(self, features):
@@ -176,50 +181,63 @@ class DeepTrust(nn.Module, BaseDREBIN):
         for i, batch in enumerate(dataloader):
             with torch.no_grad():
 
-                # Step 1: GuardNet
-                features = batch.to(self.device)
-                output = self.guardNet.forward(features)
-                guard_prob = sigmoid(output).squeeze().cpu().numpy()
-#                print("Guard prob: ", guard_prob)
-                if guard_prob >= self.h1:
-#                    print("Guard barrier not crossed!")
-                    indices[i] = 1
-                    scores[i] = guard_prob
-
-                # Step 2: BaseNet
-                else:
-#                     print("Guard prob is less than h1")
+                if not self.multistep:
                     features = batch.to(self.device)
-                    output, embedding = self.trustNet.forward(features,
-                                                              return_embedding=True)
-                    base_prob = sigmoid(output).squeeze().cpu().numpy()
-#                     print("Base prob: ", base_prob)
-                    if base_prob >= self.h2:
-#                         print("Guard barrier crossed! → BaseNet flags it as malware.")
+                    guard_output = self.guardNet.forward(features)
+                    guard_prob = sigmoid(guard_output).squeeze().cpu().numpy()
+                    trust_output = self.trustNet.forward(features)
+                    trust_prob = sigmoid(trust_output).squeeze().cpu().numpy()
+
+                    # Combine the probabilities
+                    combined_prob = (guard_prob + trust_prob) / 2.0
+                    if combined_prob >= self.h4:
                         indices[i] = 1
-                        scores[i] = base_prob
+                        scores[i] = combined_prob
 
-                    # Step 3: InspectorRF
+                else:
+                    # Step 1: GuardNet
+                    features = batch.to(self.device)
+                    output = self.guardNet.forward(features)
+                    guard_prob = sigmoid(output).squeeze().cpu().numpy()
+
+                    if guard_prob >= self.h1:
+                        indices[i] = 1
+                        scores[i] = guard_prob
+
+                    # Step 2: BaseNet
                     else:
-#                         print("Base prob is less than h2")
-                        np_embedding = embedding.cpu().numpy()
-                        is_inlier = self.inspectRF.predict(np_embedding)[0]
+                        features = batch.to(self.device)
+                        output, embedding = self.trustNet(features, return_embedding=True)
+                        base_prob = sigmoid(output).squeeze().cpu().numpy()
 
-                        if is_inlier == 1:
-#                             print("Is inlier and hence is goodware")
+                        # Check 1: Is BaseNet confident it is Malware?
+                        is_malware = base_prob >= self.h2
+
+                        # Check 2: Is it a verified Inlier (Goodware) via InspectorRF?
+                        # We only check this if it's NOT predicted as malware already.
+                        is_inlier = False
+                        if not is_malware and self.inspectRF is not None:
+                            np_embedding = embedding.cpu().numpy()
+                            # Check if RF predicts class 1 (Inlier)
+                            is_inlier = self.inspectRF.predict(np_embedding)[0]
+
+                        # Final Assignment
+                        if is_malware:
+                            # Case A: BaseNet says Malware
+                            indices[i] = 1
+                            scores[i] = base_prob
+
+                        elif is_inlier == 1:
+                            # Case B: InspectorRF says Goodware
                             indices[i] = 0
                             scores[i] = base_prob
 
-                        # Step 4: Goodware outlier classification
-                        # with GuardNet
                         else:
-#                             print("Guard barrier crossed! → BaseNet deceived! → Inspector flags it as anomalous → GuardNet takes over.")
-                            if guard_prob >= self.h4:
-#                                 print("Guard prob is geq than h4 and hence is malware")
-                                indices[i] = 1
-                            else:
-#                                 print("Guard prob is less than h4 and hence is goodware")
-                                indices[i] = 0
+                            # Case C: Fallback to GuardNet
+                            # Occurs if:
+                            # 1. BaseNet was unsure (< h2) AND
+                            # 2. (InspectorRF was missing OR InspectorRF flagged it as an outlier)
+                            indices[i] = 1 if guard_prob >= self.h4 else 0
                             scores[i] = guard_prob
 
         return indices, scores

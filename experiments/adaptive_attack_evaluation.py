@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import sys
@@ -79,11 +80,21 @@ def evaluate_adaptive_attack(proxy_classifier, target_classifier, config):
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser(description="Evaluate inference cost for specific models.")
+    parser.add_argument(
+        "--use_isolation_forest_in_ensemble",
+        type=bool,
+        default=True,
+        help="Configure the proxy classifier to use isolation forest for the ensemble (True) or not (False)."
+    )
+    args = parser.parse_args()
+
     proxy_classifier = DeepTrust.load(
         vectorizer_path="android-detectors/pretrained/deeptrust_vectorizer.pkl",
         classifier_path="android-detectors/pretrained/deeptrust_classifier.pkl")
     proxy_classifier.inspectRF = None # Isolation Forest will not be used for prediction
     proxy_classifier.multistep = False # Turn into ensemble
+    proxy_classifier.use_inspectRF_in_ensemble = args.use_isolation_forest_in_ensemble
 
     target_classifier = DeepTrust.load(
         vectorizer_path="android-detectors/pretrained/deeptrust_vectorizer.pkl",
@@ -96,7 +107,7 @@ if __name__ == "__main__":
     )
 
     # Create directory for saving model and results
-    path = f"experiments/out/adaptive_attack"
+    path = f"experiments/out/adaptive_attack_{'with_if' if args.use_isolation_forest_in_ensemble else 'without_if'}"
     os.makedirs(path, exist_ok=True)
     # Save in json
     with open(f"{path}/evaluation.json", "w") as f:

@@ -85,6 +85,10 @@ class DeepTrust(nn.Module, BaseDREBIN):
         # True for multistep, False for averaging the probs. of the two networks
         self.multistep = True
 
+        # True to use the inspectRF to also average the probabilities, when self.multistep is False.
+        # Ignored if self.multistep is True.
+        self.use_inspectRF_in_ensemble = False
+
         # Load the inspectRF
         self.inspectRF = IsolationForest(
             n_estimators=100, max_samples=1.0,
@@ -185,14 +189,24 @@ class DeepTrust(nn.Module, BaseDREBIN):
                     features = batch.to(self.device)
                     guard_output = self.guardNet.forward(features)
                     guard_prob = sigmoid(guard_output).squeeze().cpu().numpy()
-                    trust_output = self.trustNet.forward(features)
+                    trust_output, embedding = self.trustNet.forward(features, return_embedding=True)
                     trust_prob = sigmoid(trust_output).squeeze().cpu().numpy()
 
-                    # Combine the probabilities
-                    combined_prob = (guard_prob + trust_prob) / 2.0
-                    if combined_prob >= self.h4:
-                        indices[i] = 1
-                        scores[i] = combined_prob
+                    if self.use_inspectRF_in_ensemble:
+                        np_embedding = embedding.cpu().numpy()
+                        inv_anomaly_score = self.inspectRF.score_samples(np_embedding)[0]
+
+                        # Combine the probabilities and anomaly score
+                        combined_prob = (guard_prob + trust_prob + (1 - inv_anomaly_score)) / 3.0
+                        if combined_prob >= self.h4:
+                            indices[i] = 1
+                            scores[i] = combined_prob
+                    else:
+                        # Combine the probabilities
+                        combined_prob = (guard_prob + trust_prob) / 2.0
+                        if combined_prob >= self.h4:
+                            indices[i] = 1
+                            scores[i] = combined_prob
 
                 else:
                     # Step 1: GuardNet

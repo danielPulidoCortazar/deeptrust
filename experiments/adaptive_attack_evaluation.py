@@ -83,8 +83,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate inference cost for specific models.")
     parser.add_argument(
         "--use_isolation_forest_in_ensemble",
-        type=bool,
-        default=True,
+        action="store_true",
         help="Configure the proxy classifier to use isolation forest for the ensemble (True) or not (False)."
     )
     args = parser.parse_args()
@@ -92,7 +91,6 @@ if __name__ == "__main__":
     proxy_classifier = DeepTrust.load(
         vectorizer_path="android-detectors/pretrained/deeptrust_vectorizer.pkl",
         classifier_path="android-detectors/pretrained/deeptrust_classifier.pkl")
-    proxy_classifier.inspectRF = None # Isolation Forest will not be used for prediction
     proxy_classifier.multistep = False # Turn into ensemble
     proxy_classifier.use_inspectRF_in_ensemble = args.use_isolation_forest_in_ensemble
 
